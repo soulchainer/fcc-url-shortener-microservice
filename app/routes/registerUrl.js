@@ -4,15 +4,14 @@ var chance = require('chance').Chance();
 var mongoose = require('mongoose');
 var ShortUrl = require('../models/shortUrl');
 var url = require('url');
-var assert = require("chai");
 
 function fetchFormerUrl(originalUrl, res) {
-  var promise = ShortUrl.aggregate()
+  var fetchUrl = ShortUrl.aggregate()
     .match({ 'original_url': originalUrl })
     .project({ '_id': 0, 'original_url': 1,
                'short_url': {$concat: [ res.locals.baseUrl, '$slug' ] } })
     .exec();
-  promise.then(function(short) {
+  fetchUrl.then(function(short) {
     res.json(short[0]);
   })
   .catch(function(err) {
@@ -75,8 +74,8 @@ function registerNewShortUrl(req, res) {
     original_url : req.params.originalUrl,
     slug: res.locals.slug
   });
-  var promise = newShortUrl.save();
-  promise.then(function(short) {
+  var saveShortUrl = newShortUrl.save();
+  saveShortUrl.then(function(short) {
     json.original_url = short.original_url,
     json.short_url = joinShortUrl(res);
     res.json(json);

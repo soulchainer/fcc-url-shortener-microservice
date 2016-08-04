@@ -4,10 +4,10 @@ var mongoose = require('mongoose');
 var ShortUrl = require('../models/shortUrl');
 
 function fetchShortUrl(req, res) {
-  var promise = ShortUrl.findOne({'slug': req.params.id},
+  var fetchUrl = ShortUrl.findOne({'slug': req.params.id},
                                  { 'original_url': 1, '_id': 0 }).exec();
 
-  promise.then(function(short) {
+  fetchUrl.then(function(short) {
     res.redirect(short.original_url);
   })
   .catch(function(err){
