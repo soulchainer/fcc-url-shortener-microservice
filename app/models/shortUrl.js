@@ -1,5 +1,7 @@
 var mongoose = require('mongoose');
 var uniqueValidator = require('mongoose-unique-validator');
+// set Promise provider to bluebird
+mongoose.Promise = require('bluebird');
 
 var Schema = mongoose.Schema;
 

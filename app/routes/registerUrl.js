@@ -4,19 +4,22 @@ var chance = require('chance').Chance();
 var mongoose = require('mongoose');
 var ShortUrl = require('../models/shortUrl');
 var url = require('url');
+var assert = require("chai");
 
 function fetchFormerUrl(originalUrl, res) {
-  ShortUrl.aggregate([
-    { $match: { 'original_url': originalUrl } },
-    { $project: {
-      '_id': 0,
-      'original_url': 1,
-      'short_url': {$concat: [ res.locals.baseUrl, '$slug' ] }
-    } }
-  ], function(err, short) {
+  var promise = ShortUrl.aggregate()
+    .match({ 'original_url': originalUrl })
+    .project({ '_id': 0, 'original_url': 1,
+               'short_url': {$concat: [ res.locals.baseUrl, '$slug' ] } })
+    .exec();
+  promise.then(function(short) {
     res.json(short[0]);
+  })
+  .catch(function(err) {
+    res.json({'error': err });
   });
 }
+
 function generateRandomSlug(length) {
   var POOL = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!-_*';
   return chance.string({length: length, pool: POOL});
@@ -72,18 +75,18 @@ function registerNewShortUrl(req, res) {
     original_url : req.params.originalUrl,
     slug: res.locals.slug
   });
-  newShortUrl.save(function(err, short) {
-    if (err) {
-      var fieldError = getFieldErrorType(err);
-      if (fieldError) {
-        handleFieldError(fieldError, req, res, newShortUrl);
-      } else {
-        json.error = err.message;
-        res.json(json);
-      }
+  var promise = newShortUrl.save();
+  promise.then(function(short) {
+    json.original_url = short.original_url,
+    json.short_url = joinShortUrl(res);
+    res.json(json);
+  })
+  .catch(function(err) {
+    var fieldError = getFieldErrorType(err);
+    if (fieldError) {
+      handleFieldError(fieldError, req, res, newShortUrl);
     } else {
-      json.original_url = short.original_url,
-      json.short_url = joinShortUrl(res);
+      json.error = err.message;
       res.json(json);
     }
   });
